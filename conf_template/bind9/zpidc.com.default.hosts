@@ -1,0 +1,10 @@
+$TTL 600
+zpidc.com.  IN  SOA Bind9-130. adminqa.zpidc.com. (
+            0
+            10800
+            3600
+            604800
+            38400 )
+zpidc.com.      IN      NS      ns1.zpidc.com.
+ns1.zpidc.com.  IN      A       10.10.10.130
+ljp 		IN  	A  	1.1.1.1
