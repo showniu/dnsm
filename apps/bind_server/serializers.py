@@ -11,5 +11,8 @@ class BindServerSerializer(serializers.ModelSerializer):
         model = t_bindserver
         fields = '__all__'
 
-    # def create(self, validated_data):
-    #     return t_bindserver.objects.create(**validated_data)
+
+class BindServerIpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = t_bindserver
+        fields = ['plat_server_ip']

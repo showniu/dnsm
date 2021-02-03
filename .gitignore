@@ -138,3 +138,6 @@ tests/**/coverage/
 *.ntvs*
 *.njsproj
 *.sln
+
+# dnsm project
+apps/bind_configManager/output_conf/

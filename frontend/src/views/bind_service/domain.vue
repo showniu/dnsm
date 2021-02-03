@@ -2,7 +2,11 @@
   <div class="app-container">
     <el-container>
       <el-header height="30px">
-        <el-button type="primary" @click="addNewZoneDialog = true;">新增域名</el-button>
+        <el-form :inline="true">
+          <el-form-item style="float: right">
+            <el-button type="primary" @click="addNewZoneDialog = true;">新增域名</el-button>
+          </el-form-item>
+        </el-form>
       </el-header>
       <el-main>
         <el-table
@@ -22,35 +26,47 @@
               <el-tag
                 v-for="(item, index) in scope.row.zone_from_view"
                 :key="index"
-                style="margin-left: 5px; margin-top: 2px; min-width: 100px"
+                style="margin-left: 5px; margin-top: 2px; min-width: auto"
               >{{ item }}</el-tag>
             </template>
           </el-table-column>
 <!--          <el-table-column align="center" sortable label="域名记录文件" placeholder="当域名类型为fordwords时、此处为空" prop="zone_file" width="auto" min-width="60px" />-->
 <!--          <el-table-column align="center" sortable label="域名转发目标" placeholder="当域名类型为master时、此处为空" prop="zone_forwarders" width="auto" min-width="60px" />-->
-          <el-table-column align="center" sortable label="操作" fit="ture" width="200px">
+          <el-table-column align="center" sortable label="操作" fit="true" width="200px">
             <template slot-scope="scope">
               <el-button size="mini" @click="editZoneDialog = true; handEditZone(scope.row)">编辑</el-button>
               <el-button type="danger" size="mini" @click="SubmitDelZone(scope.row.id)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
-        <el-dialog title="新增域名" :visible.sync="addNewZoneDialog">
+        <el-dialog title="新增域名" :visible.sync="addNewZoneDialog" label-position="right">
           <el-form v-loading="listLoading" :model="submitAddZoneForm">
-            <el-form-item label="域名" label-width="formLabelWidth">
-              <el-input v-model="submitAddZoneForm.zone_name" placeholder="定义一个域名" required="true" />
-            </el-form-item>
-            <el-form-item label="域名类型" label-width="formLabelWidth">
+            <el-form-item label="域名类型" label-width="85px">
               <el-radio-group v-model="submitAddZoneForm.zone_type">
                 <el-radio v-for="type_option in addZoneType" :key="type_option" :label="type_option" />
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="域名生效区域" label-width="formLabelWidth">
+            <el-form-item label="域名" label-width="85px">
+              <el-input v-model="submitAddZoneForm.zone_name" placeholder="定义一个域名" required="true" />
+            </el-form-item>
+            <el-form-item label="默认解析" label-width="85px" v-if="submitAddZoneForm.zone_type === 'master'">
+              <el-input v-model="submitAddZoneForm.default_value" placeholder="指定域名默认解析值" required="true" />
+            </el-form-item>
+            <el-form-item label="目标服务器" label-width="85px" v-if="submitAddZoneForm.zone_type === 'forward'">
+              <el-input v-model="submitAddZoneForm.zone_forwarders" placeholder="指定域名转发目标服务器" required="true" />
+            </el-form-item>
+            <el-form-item label="所属区域" label-width="85px">
               <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAllChange">全选</el-checkbox>
               <div style="margin: 15px 0;" />
               <el-checkbox-group v-model="submitAddZoneForm.zone_from_view" @change="handleCheckedViewNameChange">
                 <el-checkbox v-for="view_option in addZoneView" :key="view_option" :label="view_option" border size="medium" />
               </el-checkbox-group>
+            </el-form-item>
+            <el-form-item label="记录文件" label-width="85px">
+              <el-card body-style="padding: 10px 10px; line-height: 1px;" style="padding: 8px 0;" v-for="v in submitAddZoneForm.zone_from_view" :key="v">
+<!--                  /usr/local/bind9/etc/hostRecord/{{ submitAddZoneForm.zone_name }}.{{ v }}.conf.host-->
+                  /Users/ljp/data/bind9/etc/hostRecord/{{ submitAddZoneForm.zone_name }}.{{ v }}.conf.host
+              </el-card>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer">
@@ -105,6 +121,7 @@ export default {
       submitAddZoneForm: {
         zone_from_view: []
       },
+      zone_record_file: [],
       submitEditZoneForm: {},
       checkAll: false,
       isIndeterminate: true,

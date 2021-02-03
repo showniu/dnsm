@@ -7,18 +7,20 @@
 ```bash
   systemctl stop firewalld && setenforce 0
   systemctl disable firewalld.service
-  yum -y install openssl-devel libcap-devel libuv-devel
+  yum -y install openssl-devel libcap-devel libuv-devel python-pip gcc json-c-devel
   pip install --upgrade pip && pip install ply
+  tar xf  bind-9.16.4.tar.xz
   cd bind-9.16.4
-  ./configure  --prefix=/usr/local/bind9 --enable-epoll && make -j 15 && make install
+  ./configure  --prefix=/usr/local/bind9 --enable-epoll --with-json-c && make -j 15 && make install
   useradd -r -m -d /var/named -s /sbin/nologin named
   mkdir -p /var/log/named && chown -R named.named /var/log/named /usr/local/bind9
   mkdir -p /var/named/data && chown named.named /var/named/data
+  echo 'export PATH=$PATH:/usr/local/bind9/sbin' >> /etc/profile
   cd /usr/local/bind9/etc && rndc-confgen > rndc.conf && tail -10 rndc.conf | head -9 | sed s/#\ //g >> named.conf  #生成配置文件
 ```
 
 #### 开启Bind系统用量信息-json格式信息统计
-1、编译时增加 `--with-json-c` 参数、开启Json格式的信息统计
+1、编译时增加 `--with-json-c` 参数、开启Json格式的信息统计 (依赖`json-c-devel`系统包)
 2、在named.conf 中新增配置
 ```bash
 statistics-channels {

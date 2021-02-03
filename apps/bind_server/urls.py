@@ -6,10 +6,16 @@
 from django.conf.urls import url
 from .views import BindServerListView
 from .views import BindServerOpsView
+from .views import BindServerInit
+from .views import ResetBindServerInit
+from .views import BindServerIPListView
 
 urlpatterns = [
     url(r'^bindserver/list$', BindServerListView.as_view(), name='bind server list'),
-    url(r'^bindserver/list/(?P<obj_id>\d+)/$', BindServerOpsView.as_view(), name='bind server ops')
+    url(r'^bindserver/list/ip$', BindServerIPListView.as_view(), name='bind server ops for ip'),
+    url(r'^bindserver/list/(?P<obj_id>\d+)/$', BindServerOpsView.as_view(), name='bind server ops'),
+    url(r'^bindserver/init$', BindServerInit.as_view(), name='bind server init'),
+    url(r'^bindserver/reststate/(?P<obj_id>\d+)/$', ResetBindServerInit.as_view(), name='reset server init')
 ]
 
 

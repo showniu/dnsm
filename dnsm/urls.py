@@ -21,4 +21,6 @@ urlpatterns = [
     re_path(r"^", include("base.urls")),
     re_path(r"^api/", include("bind_server.urls")),
     re_path(r"^api/", include("bind_service.urls")),
+    re_path(r"^api/", include("bind_configManager.urls")),
+    re_path(r"^api/", include("operation_log.urls"))
 ]

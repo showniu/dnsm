@@ -30,6 +30,11 @@
           <el-table-column align="center" sortable label="记录类型" prop="record_type" min-width="25px" />
           <el-table-column align="center" sortable label="记录值" prop="record_value" min-width="50px" />
           <el-table-column align="center" sortable label="所属域名" prop="record_zone" min-width="60px" />
+          <el-table-column align="center" sortable label="解析区域(线路)" prop="record_from_view" min-width="35px">
+            <template slot-scope="scope">
+              <el-tag>{{ scope.row.record_from_view }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column align="center" sortable label="备注" prop="record_remarks" min-width="40px" />
           <el-table-column align="center" sortable label="操作" width="200px">
             <template slot-scope="scope">
@@ -50,6 +55,13 @@
                 <el-option v-for="zoneOption in recordZoneOption" :key="zoneOption.zone_name" :label="zoneOption.zone_name" :value="zoneOption.zone_name" />
               </el-select>
             </el-form-item>
+            <el-form-item sort-table label="所属区域" prop="record_from_view" width="auto" label-width="80px">
+              <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAllRecordChange">全选</el-checkbox>
+              <div style="margin: 15px 0;" />
+              <el-checkbox-group v-model="addNewRecordForm.record_from_view" @change="handleCheckedRecordChange">
+                <el-checkbox v-for="view_option in recordViewOption" :key="view_option" :label="view_option" size="medium" />
+              </el-checkbox-group>
+            </el-form-item>
             <el-form-item label="主机记录" label-width="80px">
               <el-input v-model="addNewRecordForm.record_key" placeholder="定义一个记录" />
             </el-form-item>
@@ -67,26 +79,24 @@
         </el-dialog>
         <el-dialog title="编辑记录" :visible.sync="editRecordDialog" width="40%">
           <el-form v-model="editRecordForm" label-position="right">
-            <el-form-item label="记录类型" label-width="80px">
+            <el-form-item label="记录类型" label-width="110px">
               <el-radio-group v-model="editRecordForm.record_type">
                 <el-radio v-for="type_option in recordTypeOption" :key="type_option" :label="type_option" border />
               </el-radio-group>
             </el-form-item>
-            <el-form-item label="所属域名" label-width="80px">
-              <el-input v-model="editRecordForm.record_zone" disabled />
-              <!--
-              <el-select v-model="editRecordForm.record_zone" filterable placeholder="选择所属域名" style="width: 70%">
-                <el-option v-for="zoneOption in recordZoneOption" :key="zoneOption.zone_name" :label="zoneOption.zone_name" :value="zoneOption.zone_name" disabled />
-              </el-select>
-              -->
+            <el-form-item label="解析区域(线路)" label-width="110px">
+              <el-input v-model="editRecordForm.record_from_views" disabled />
             </el-form-item>
-            <el-form-item label="主机记录" label-width="80px">
+            <el-form-item label="所属域名" label-width="110px">
+              <el-input v-model="editRecordForm.record_zone" disabled />
+            </el-form-item>
+            <el-form-item label="主机记录" label-width="110px">
               <el-input v-model="editRecordForm.record_key" placeholder="定义一个记录" disabled />
             </el-form-item>
-            <el-form-item label="记录值" label-width="80px">
+            <el-form-item label="记录值" label-width="110px">
               <el-input v-model="editRecordForm.record_value" placeholder="记录值" />
             </el-form-item>
-            <el-form-item label="备注" label-width="80px">
+            <el-form-item label="备注" label-width="110px">
               <el-input v-model="editRecordForm.record_remarks" placeholder="备注" />
             </el-form-item>
           </el-form>
@@ -101,7 +111,7 @@
 </template>
 
 <script>
-import { addRecord, delRecord, editRecord, getRecordList, getZoneList } from '@/api/bindservice/bindserviceapi'
+import { addRecord, delRecord, editRecord, getAclViewList, getRecordList, getZoneList } from '@/api/bindservice/bindserviceapi'
 export default {
   filter: {
     statusFilter(status) {
@@ -116,6 +126,8 @@ export default {
   data() {
     return {
       list: null,
+      isIndeterminate: true,
+      checkAll: false,
       search_key: {
         search: null
       },
@@ -127,10 +139,12 @@ export default {
         record_type: '',
         record_value: '',
         record_zone: '',
+        record_from_view: [],
         record_remarks: ''
       },
       recordZoneOption: null,
       recordTypeOption: ['A', 'CNAME'],
+      recordViewOption: [],
       editRecordForm: {},
       formLabelWidth: '50px'
     }
@@ -142,7 +156,14 @@ export default {
     fetchData() {
       this.listLoading = true
       getRecordList(this.search_key).then(response => {
-        this.list = response
+        const record_list_data = response
+        // for (const item of record_list_data) {
+        //   const record_from_view = item.record_from_view
+        //   const format_record_from_view = record_from_view.split(',')
+        //
+        //   item.record_from_view = format_record_from_view.sort()
+        // }
+        this.list = record_list_data
         this.listLoading = false
       })
     },
@@ -151,9 +172,29 @@ export default {
         const zoneData = response.data
         this.recordZoneOption = zoneData
       })
+      if (this.recordViewOption.length > 0) {
+        const x_none = []
+        this.recordViewOption = x_none // 清理对象数据、否则会出现重复的选项
+      }
+      getAclViewList().then(response => {
+        this.viewData = response.data
+        this.viewData.forEach((item, index) => {
+          this.recordViewOption.push(item.view_name)
+          this.listLoading = false
+        })
+      })
       setTimeout(() => {
         this.addNewRecordDialog = true
       }, 1000)
+    },
+    handleCheckAllRecordChange(val) {
+      this.addNewRecordForm.record_from_view = val ? this.recordViewOption : []
+      this.isIndeterminate = false
+    },
+    handleCheckedRecordChange(value) {
+      const checkedCount = value.length
+      this.checkAll = checkedCount === this.recordViewOption.length
+      this.isIndeterminate = checkedCount > 0 && checkedCount < this.recordViewOption.length
     },
     SubmitAddNewRecord() {
       console.log('新增的参数', this.addNewRecordForm)
@@ -192,6 +233,7 @@ export default {
       const record_type = params.record_type
       const record_remarks = params.record_remarks
       const record_zone = params.record_zone
+      const record_from_view = params.record_from_view
 
       this.$set(this.editRecordForm, 'id', id)
       this.$set(this.editRecordForm, 'record_key', record_key)
@@ -199,6 +241,7 @@ export default {
       this.$set(this.editRecordForm, 'record_type', record_type)
       this.$set(this.editRecordForm, 'record_zone', record_zone)
       this.$set(this.editRecordForm, 'record_remarks', record_remarks)
+      this.$set(this.editRecordForm, 'record_from_views', record_from_view)
 
       this.editRecordDialog = true
     },

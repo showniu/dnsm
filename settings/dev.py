@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 import sys
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +28,7 @@ SECRET_KEY = '$^ubqv=_&1#eay6o8&^6wxjbt$sx1(%30ae&-+(-4(s$wg6h5l'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -38,12 +39,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 'django_celery_beat',
     'corsheaders',
     'django_filters',
-    'base.apps.BaseConfig',
+    # 'base.apps.BaseConfig',
     "rest_framework",
+    "rest_framework.authtoken",
     'bind_server',
-    'bind_service'
+    'bind_service',
+    'bind_configManager',
+    'auditlog',
+    'operation_log',
+    'bind_ssoauth'
 ]
 
 MIDDLEWARE = [
@@ -54,7 +61,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
+    # 'auditlog.middleware.AuditlogMiddleware',
 ]
 
 ROOT_URLCONF = 'dnsm.urls'
@@ -76,8 +84,14 @@ TEMPLATES = [
     },
 ]
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1)
+}
+
 WSGI_APPLICATION = 'dnsm.wsgi.application'
 
+# Database
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
@@ -109,14 +123,20 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        "base.auth.TokenAuthentication",
-    ],
+# AUTHENTICATION_BACKENDS = ['bind_ssoauth.zpsso_auth.zpSsoTokenAuthentication']
 
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        # 自定义的权限控制
+        # 'bind_ssoauth.permissions.OpsPermissions',
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        # 打开或关闭自定义的SSO登录
+        # 'bind_ssoauth.zpsso_auth.zpSsoTokenAuthentication',
+    ]
 }
 
 LANGUAGE_CODE = 'zh-hans'
@@ -131,9 +151,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
-# AUTH_URL = "https://ops1.xx.com/ops/v1/api/auth/info"
-# HTTP_AUTHORIZATION = "HTTP_AUTHORIZATION"
 
 # 跨域配置 start
 CORS_ORIGIN_ALLOW_ALL = True
@@ -162,3 +179,12 @@ CORS_ALLOW_HEADERS = (
     'x-token'
 )
 # 跨域配置 end
+
+# celery 配置
+CELERY_TIMEZONE = "Australia/Tasmania"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_BROKER_URL = 'redis://10.2.0.62:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

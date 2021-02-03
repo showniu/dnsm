@@ -1,0 +1,4 @@
+view  "localenv" {
+        match-clients { any; };
+        zone "zpidc.com" { type master; file "/var/named/zpidc.com.localenv.hosts"; };
+};
